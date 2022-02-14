@@ -44,6 +44,38 @@ Backbone / Encoder: Here we will use a pre-trained VGG-19 model as the encoder. 
 ## Improve the predicted masks
 Once we get the predicted masks from the model, we try to use a few OpenCV functions to smoothen out the boxes. First, Gaussian blur is applied to the masks and then we try to find the contours in the mask. Once contours are found for each contour we fit a rectangular bounding rectangle which gives significantly better masks. Also, we ignore regions that are very small which indicate irregular points/patches. Using these post-processing steps the masks obtained are significantly better.
 
+## **Observations**
+
+**Distribution of the scores**
+- We can see that out distribution of IoU scores is skewed towards the left i.e most values fall on the right side. This is a good thing as we can see that most scores are > 0.4 and very few scores < 0.3. Generally, IoU score of 0.5 is considered fairly good.
+- We categorize our samples into categories based on the IoU scores
+      1.Best : IoU score > 0.7
+      2.Average : IoU score between 0.4 and 0.7
+      3.Worst : IoU score < 0.4
+
+- We see that out of 467 samples 87% of the images belonged to Best category, 12% in the average and only 1% in the worst category. This seems like a fairly good distribution in our case.
+
+**Looking at images in the categories**
+1. **BEST**
+  - Most of these images have only 1 table
+  - The tables are larger in size and occupy a mmajor part of the iamge size.
+  - Also, when we look at the actual image as the size of the tables are large, there is very less text in the image exclusing the tables.
+
+2. **AVERAGE**
+  - We have multiple tables in a single image
+  - Compared to BEST cases, the table sizes are significatly smaller.
+  - Our model fails in cases where tables are adjacent to once another. In such cases we see that our model combines the masks of adjacent tables into one single table.
+  - In some cases whitespace surrounding a table is also predicted as mask, because of which the predicted mask is slightly larger than the ground truth masks.
+
+3. **WORST CASES**
+  - We see that if table sizes are very small i.e small height, the our models fails to predict the masks properly.
+
+4. **IoU = 0 or NaN**
+
+  - As we assumed before that if IoU score is NaN or 0 its because there were no tables in the image. When we plot the images with IoU as NaN we see the same.
+  - For some images we see that even though there were no tables, some tiny dots were predicted becuase of which IoU was 0.0
+  
+  
 ## Extract Text from the Tables
 Once the table masks are predicted we use the PyTesseract library in order to extract the text from the Tables and save them into CSV files. We follow these steps
 First, take the input image and get the predicted masks from the model. Apply post-processing on these masks.
